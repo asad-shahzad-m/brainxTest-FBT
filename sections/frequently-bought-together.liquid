@@ -1,0 +1,396 @@
+{% if section.settings.fbt_products != blank %}
+  {{ 'frequently-bought-together.css' | asset_url | stylesheet_tag }}
+
+  {% style %}
+    .section-{{ section.id }}-padding {
+      padding-top: {{ section.settings.padding_top_mobile | append: 'px' }};
+      padding-bottom: {{ section.settings.padding_bottom_mobile | append: 'px' }};
+    }
+
+    @media (min-width: 750px) {
+      .section-{{ section.id }}-padding {
+        padding-top: {{ section.settings.padding_top | append: 'px' }};
+        padding-bottom: {{ section.settings.padding_bottom | append: 'px' }};
+      }
+    }
+  {% endstyle %}
+
+  {% capture json %}
+    {{ product | json }},
+    {% for fbt_product in section.settings.fbt_products %}
+      {{ fbt_product | json }}
+      {% unless forloop.last %}
+        ,
+      {% endunless %}
+    {% endfor %}
+  {% endcapture %}
+
+  {% comment %} fbt product images {% endcomment %}
+  {% capture fbt_media %}
+    {% for fbt_product in section.settings.fbt_products %}
+      {% if forloop.first %}
+        <div class="fbt__media-item" data-product-id="{{ product.selected_or_first_available_variant.id }}">
+          <img src="{{ product.featured_image | img_url: '400x' }}">
+        </div>
+      {% endif %}
+      <div class="fbt__media-item" data-product-id="{{ fbt_product.selected_or_first_available_variant.id }}">
+        <img src="{{ fbt_product.featured_image | img_url: '400x' }}">
+      </div>
+    {% endfor %}
+  {% endcapture %}
+  {% comment %} end fbt product images {% endcomment %}
+
+  {% comment %} fbt prices {% endcomment %}
+  {% assign total_price = 0 %}
+  {% assign total_compare_price = 0 %}
+
+  {% for fbt_product in section.settings.fbt_products %}
+    {% if forloop.first %}
+      {% assign selected_variant = product.selected_or_first_available_variant %}
+
+      {% assign total_price = total_price | plus: selected_variant.price %}
+      {% if selected_variant.compare_at_price == null %}
+        {% assign total_compare_price = total_compare_price | plus: selected_variant.price %}
+      {% else %}
+        {% assign total_compare_price = total_compare_price | plus: selected_variant.compare_at_price %}
+      {% endif %}
+    {% endif %}
+
+    {% assign selected_variant = fbt_product.selected_or_first_available_variant %}
+
+    {% assign total_price = total_price | plus: selected_variant.price %}
+    {% if selected_variant.compare_at_price == null %}
+      {% assign total_compare_price = total_compare_price | plus: selected_variant.price %}
+    {% else %}
+      {% assign total_compare_price = total_compare_price | plus: selected_variant.compare_at_price %}
+    {% endif %}
+  {% endfor %}
+  {% comment %} end fbt prices {% endcomment %}
+
+  {% comment %} fbt product options {% endcomment %}
+  {% capture fbt_options %}
+    {% for fbt_product in section.settings.fbt_products %}
+      {% if forloop.first %}
+        <div 
+          class="fbt__options-item" 
+          data-product-id="{{ product.id }}" 
+          data-product-handle="{{ product.handle }}" 
+          data-price="{{ product.selected_or_first_available_variant.price }}" 
+          data-compare-price="{{ product.selected_or_first_available_variant.compare_at_price }}"
+        >
+          <input value="{{ product.selected_or_first_available_variant.id }}" id="{{ product.selected_or_first_available_variant.id }}" type="checkbox" checked>
+          <label for="{{ product.selected_or_first_available_variant.id }}">
+            <strong>This item: </strong>
+            {{ product.title }}
+          </label>
+          {% if product.options.size > 0 and product.has_only_default_variant == false %}
+            <select name="product-selector-{{ product.id }}">
+              {% for option in product.options_with_values %}
+                {% for value in option.values %}
+                  <option value="{{ value }}" {% if forloop.first %}selected{% endif %}>{{ value }}</option>
+                {% endfor %}
+              {% endfor %}
+            </select>
+          {% endif %}
+          <span class="price-container price--on-sale">
+            <span class="price-item--regular">
+              {{ product.selected_or_first_available_variant.compare_at_price | money }}
+            </span>
+            <span class="price-item--sale">
+              {{ product.selected_or_first_available_variant.price | money }}
+            </span>
+          </span>
+        </div>
+      {% endif %}
+      <div 
+        class="fbt__options-item" 
+        data-product-id="{{ fbt_product.id }}" 
+        data-product-handle="{{ fbt_product.handle }}"
+        data-price="{{ fbt_product.selected_or_first_available_variant.price }}" 
+        data-compare-price="{{ fbt_product.selected_or_first_available_variant.compare_at_price }}"
+      >
+        <input value="{{ fbt_product.selected_or_first_available_variant.id }}" id="{{ fbt_product.selected_or_first_available_variant.id }}" type="checkbox" checked>
+        <label for="{{ fbt_product.selected_or_first_available_variant.id }}">
+          {{ fbt_product.title }}
+        </label>
+        {% if fbt_product.options.size > 0 and fbt_product.has_only_default_variant == false %}
+          <select name="product-selector-{{ fbt_product.id }}">
+            {% for option in fbt_product.options_with_values %}
+              {% for value in option.values %}
+                <option value="{{ value }}">{{ value }}</option>
+              {% endfor %}
+            {% endfor %}
+          </select>
+        {% endif %}
+        <span class="price-container price--on-sale">
+          <span class="price-item--sale">
+            {{ fbt_product.selected_or_first_available_variant.price | money }}
+          </span>
+          <span class="price-item--regular">
+            {{ fbt_product.selected_or_first_available_variant.compare_at_price | money }}
+          </span>
+        </span>
+      </div>
+    {% endfor %}
+  {% endcapture %}
+  {% comment %} end fbt product options {% endcomment %}
+
+  <div class="fbt__wrapper page-width section-{{ section.id }}-padding">
+    {% if section.settings.heading != blank %}
+      <h2 class="{{ section.settings.heading_size }}">{{ section.settings.heading }}</h2>
+    {% endif %}
+    <div class="fbt">
+      <div class="fbt__media">
+        {{ fbt_media }}
+      </div>
+
+      <div class="fbt__atc">
+        <span
+          class="total-price-container price--on-sale"
+        >
+          <span>Total Price:</span>
+          <span data-total-price="{{ total_price }}" class="price-item--sale">{{ total_price | money }}</span>
+          <span data-total-compare-price="{{ total_compare_price }}" class="price-item--regular">
+            {{- total_compare_price | money -}}
+          </span>
+        </span>
+        <button class="button">Add selected to cart</button>
+      </div>
+
+      <div class="fbt__options">
+        {{ fbt_options }}
+      </div>
+
+      <div class="fbt__errors hidden"></div>
+    </div>
+  </div>
+{% endif %}
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const productArr = [{{ json }}];
+    const cart = document.querySelector('cart-drawer');
+    const cartBubble = document.querySelector('#cart-icon-bubble');
+
+    const errorContainer = document.querySelector("#shopify-section-{{ section.id }} .fbt__errors");
+
+
+    const submitButton = document.querySelector('#shopify-section-{{ section.id }} .button');
+
+    const totalPriceEl = document.querySelector('#shopify-section-{{ section.id }} .total-price-container .price-item--sale');
+    const totalComparePriceEl = document.querySelector('#shopify-section-{{ section.id }} .total-price-container .price-item--regular');
+
+    const variantSelectArr = document.querySelectorAll('#shopify-section-{{ section.id }} select');
+
+    function updatePrices() {
+      let total = 0
+      let totalCompare = 0;
+
+      document.querySelectorAll("#shopify-section-{{ section.id }} .fbt__options-item:has(input:checked)").forEach((item) => {
+        total += item.dataset.price * 1;
+        totalCompare += item.dataset.comparePrice * 1 || item.dataset.price * 1;
+      })
+
+      totalPriceEl.textContent = Shopify.formatMoney(total);
+      totalComparePriceEl.textContent = Shopify.formatMoney(totalCompare);
+
+      if (total === 0) {
+        submitButton.classList.add('disabled');
+      } else {
+        submitButton.classList.remove('disabled');
+      }
+    }
+
+    variantSelectArr.forEach(function(variantSelect) {
+      variantSelect.addEventListener("change", function() {
+        const option = variantSelect.closest(".fbt__options-item");
+        const productId = option.dataset.productId * 1;
+        const product = productArr.find((product) => product.id === productId);
+        const selectedVariant = product.variants.find((variant) => variant.title === variantSelect.value);
+
+        option.querySelector(".price-item--regular").textContent = selectedVariant.compare_at_price ? Shopify.formatMoney(selectedVariant.compare_at_price) : '';
+        option.querySelector(".price-item--sale").textContent = Shopify.formatMoney(selectedVariant.price);
+
+        option.dataset.price = selectedVariant.price;
+        option.dataset.comparePrice = selectedVariant.compare_at_price || 0;
+
+        option.querySelector('input').value = selectedVariant.id;
+
+        updatePrices();
+      });
+    });
+
+    submitButton.addEventListener('click', function () {
+      const items = [];
+      document.querySelectorAll("#shopify-section-{{ section.id }} .fbt input").forEach((input) => {
+        if (input.checked) {
+          items.push(
+            {
+              id: input.value * 1,
+              quantity: 1
+            }
+          );
+        }
+      });
+
+      let formData = {
+        'items': items
+      };
+
+      $.ajax({
+        type: 'POST',
+        url: '/cart/add.js',
+        data: JSON.stringify(formData),
+        dataType: 'json',
+        contentType: 'application/json',
+        success: function(response) {
+          fetch(`${routes.cart_url}?section_id=cart-drawer`)
+          .then((response) => response.text())
+          .then((responseText) => {
+            const html = new DOMParser().parseFromString(responseText, 'text/html');
+            const selectors = ['cart-drawer'];
+            for (const selector of selectors) {
+              const targetElement = document.querySelector(selector);
+              const sourceElement = html.querySelector(selector);
+              if (targetElement && sourceElement) {
+                  targetElement.replaceWith(sourceElement);
+              }
+            }
+
+            const bubble = cartBubble.querySelector('.cart-count-bubble span:not(.visually-hidden)');
+            const prevTotal = bubble.textContent * 1;
+            const newItems = formData.items.length;
+            bubble.textContent = prevTotal + newItems;
+            setTimeout(() => {
+              cartBubble.click();
+            }, 300)
+          })
+          .catch((e) => {
+            console.error(e);
+          });
+        },
+        error: function(XMLHttpRequest, textStatus) {
+          console.error('Error adding product to cart:', textStatus);
+          const errorMessage = XMLHttpRequest.responseJSON.message;
+          errorContainer.textContent = errorMessage;
+          errorContainer.classList.remove("hidden");
+        }
+      });
+    });
+
+    document.querySelectorAll("#shopify-section-{{ section.id }} .fbt__options-item input").forEach((input) => {
+      input.addEventListener("change", function() {
+        updatePrices();
+        const productId = this.id;
+        const target = document.querySelector(`#shopify-section-{{ section.id }} .fbt__media-item[data-product-id='${productId}']`);
+        if (this.checked) {
+          target.classList.remove('hidden');
+        } else {
+          target.classList.add('hidden');
+        }
+
+        errorContainer.classList.add("hidden");
+      });
+    })
+  });
+</script>
+
+{% schema %}
+{
+  "name": "Bought together",
+  "disabled_on": {
+    "groups": ["header", "footer"]
+  },
+  "settings": [
+    {
+      "type": "inline_richtext",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Frequently Bought Together"
+    },
+    {
+      "type": "select",
+      "id": "heading_size",
+      "options": [
+        {
+          "value": "h2",
+          "label": "t:sections.all.heading_size.options__1.label"
+        },
+        {
+          "value": "h1",
+          "label": "t:sections.all.heading_size.options__2.label"
+        },
+        {
+          "value": "h0",
+          "label": "t:sections.all.heading_size.options__3.label"
+        },
+        {
+          "value": "hxl",
+          "label": "t:sections.all.heading_size.options__4.label"
+        },
+        {
+          "value": "hxxl",
+          "label": "t:sections.all.heading_size.options__5.label"
+        }
+      ],
+      "default": "h1",
+      "label": "t:sections.all.heading_size.label"
+    },
+    {
+      "type": "product_list",
+      "id": "fbt_products",
+      "label": "Products"
+    },
+    {
+      "type": "header",
+      "content": "t:sections.all.padding.section_padding_heading"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "t:sections.all.padding.padding_top",
+      "default": 36
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "t:sections.all.padding.padding_bottom",
+      "default": 36
+    },
+    {
+      "type": "range",
+      "id": "padding_top_mobile",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Top padding mobile",
+      "default": 36
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom_mobile",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Bottom padding mobile",
+      "default": 36
+    }
+  ],
+  "presets": [
+    {
+      "name": "Bought together"
+    }
+  ]
+}
+{% endschema %}

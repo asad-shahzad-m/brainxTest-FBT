@@ -1,0 +1,64 @@
+.fbt {
+  display: flex;
+  flex-wrap: wrap;
+}
+@media (max-width: 750px) {
+  .fbt {
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+.fbt__media {
+  display: flex;
+  width: 50%;
+  max-height: 160px;
+  gap: 16px;
+}
+@media (max-width: 750px) {
+  .fbt__media {
+    width: 100%;
+  }
+}
+.fbt__media-item {
+  position: relative;
+}
+.fbt__media-item:not(:last-child):after {
+  content: "+";
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  transform: translate(50%, -50%);
+}
+.fbt__media-item img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  -o-object-fit: contain;
+     object-fit: contain;
+}
+.fbt__options {
+  flex: 1;
+}
+.fbt__options-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.fbt__atc {
+  display: flex;
+  flex-direction: column;
+  align-self: flex-start;
+  gap: 8px;
+  width: 50%;
+}
+@media (max-width: 750px) {
+  .fbt__atc {
+    margin-inline: auto;
+  }
+}
+.fbt__atc .button {
+  max-width: -moz-fit-content;
+  max-width: fit-content;
+  min-height: 42px;
+  text-transform: uppercase;
+}/*# sourceMappingURL=frequently-bought-together.css.map */
